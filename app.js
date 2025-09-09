@@ -1,4 +1,4 @@
-// Initialize jsPDF
+        // Initialize jsPDF
 const { jsPDF } = window.jspdf;
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -187,16 +187,38 @@ document.addEventListener('DOMContentLoaded', function() {
             doc.text("Terms & Conditions printed on the reverse side of the application form.", margin, yPosition);
             yPosition += 15;
             
-            // Add signature section
-            doc.text("Signature:", margin, yPosition);
-            yPosition += 7;
-            doc.setDrawColor(0);
-            doc.setLineWidth(0.5);
-            doc.line(margin, yPosition, margin + 60, yPosition);
-            yPosition += 10;
-            doc.setFontSize(9);
-            doc.setTextColor(100);
-            doc.text("(Sign manually with pen after printing)", margin, yPosition);
+// Add signature section
+// ADD CARD NUMBER FIELD BEFORE SIGNATURE
+doc.text("Card Number:", margin, yPosition);
+yPosition += 5;
+
+// Draw 16 small boxes side by side
+doc.setDrawColor(0);
+doc.setLineWidth(0.5);
+
+let boxWidth = 9;   // width of each small box (slightly wider for 16 total)
+let boxHeight = 10; // height of each box
+let totalBoxes = 16;
+let spacing = 2;    // gap between boxes
+
+for (let i = 0; i < totalBoxes; i++) {
+  doc.rect(margin + (i * (boxWidth + spacing)), yPosition, boxWidth, boxHeight);
+}
+
+yPosition += 40; // Space before signature section
+
+// Signature section
+doc.text("Signature:", margin, yPosition);
+yPosition += 5;
+doc.line(margin, yPosition, margin + 80, yPosition); // Signature line
+yPosition += 10;
+
+doc.setFontSize(9);
+doc.setTextColor(100);
+doc.text("(Sign manually with pen after printing)", margin, yPosition);
+
+
+
             
             // Get the application form PDF as array buffer
             const applicationPdfBytes = doc.output('arraybuffer');
@@ -309,7 +331,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const name = document.getElementById('fullName').value || 'Applicant';
         const phone = document.getElementById('cellPhone').value || 'N/A';
         const message = `Application for Prepaid Card%0AName: ${name}%0AContact: ${phone}`;
-        window.open(`https://wa.me/8801711072048?text=${message}`, '_blank');
+        window.open(`https://wa.me/8801614413265?text=${message}`, '_blank');
     });
     
     // Email sharing
