@@ -8,6 +8,14 @@
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+    <style>
+  #nid:invalid {
+    border: 2px solid red;
+  }
+  #nid:valid {
+    border: 2px solid green;
+  }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -56,8 +64,12 @@
                     </div>
                 <div class="form-group">
                     <label for="nid">NID Number</label>
-                    <input type="text" id="nid" required pattern="\d{10,17}" maxlength="17" placeholder="Enter 10-17 digits">
-                    <small>Enter between 10 to 17 digits only</small>
+                    <input type="text" id="nid" 
+                    required 
+                    pattern="(\d{10}|\d{17})" 
+                    maxlength="17" 
+                    placeholder="Enter Smart (10 digits) or Classic (17 digits)">
+                    <small>NID must be exactly 10 or 17 digits</small>
                 </div>
 
                 </div>
