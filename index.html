@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEBPLC - Prepaid Card Application</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo-container">
+                <img src="logo.jpg" alt="Southeast Bank Logo" class="seblogo">
+            </div>
+            <div class="header-text">APPLICATION FOR PREPAID CARD</div>
+        </header>
+
+        <div class="form-container">
+            <h1>Application Form</h1>
+
+            <div class="success-message" id="success-message">
+                Your application has been submitted successfully! The PDF is being uploaded to Google Drive.
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Processing your application and uploading to Google Drive...</p>
+            </div>
+
+            <form id="application-form">
+                <div class="row">
+                    <div class="form-group">
+                        <label for="fullName">Full Name (as in NID/Passport)</label>
+                        <input type="text" id="fullName" required>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="form-group">
+                        <label for="fatherName">Father's Name</label>
+                        <input type="text" id="fatherName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="motherName">Mother's Name</label>
+                        <input type="text" id="motherName" required>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="form-group">
+                        <label for="dob">Date of Birth</label>
+                        <input type="date" id="dob" required>
+                    </div>
+                <div class="form-group">
+                    <label for="nid">NID Number</label>
+                    <input type="text" id="nid" 
+                    required 
+                    pattern="(\d{10}|\d{17})" 
+                    maxlength="17" 
+                    placeholder="Enter Smart (10 digits) or Classic (17 digits)">
+                    <small>NID must be exactly 10 or 17 digits</small>
+                </div>
+
+                </div>
+
+                <div class="form-group">
+  <label for="nidAttachment">NID Attachment (mandatory) <span style="color:red;">*</span></label>
+  <div class="file-upload" id="nidUploadArea">
+    <i class="fas fa-cloud-upload-alt"></i>
+    <p>Click to upload NID document</p>
+    <p class="file-type">(PDF, JPG, PNG - Max 10MB)</p>
+    <input type="file" 
+           id="nidAttachment" 
+           class="file-input" 
+           accept=".pdf,.jpg,.jpeg,.png" 
+           required> <!-- Added 'required' -->
+    <div class="file-name" id="nidFileName"></div>
+    <div class="file-size-warning" id="fileSizeWarning">
+      File size exceeds 10MB limit. Please choose a smaller file.
+    </div>
+  </div>
+</div>
+
+                <div class="form-group">
+                    <label for="presentAddress">Present Address</label>
+                    <textarea id="presentAddress" rows="3" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="permanentAddress">Permanent Address</label>
+                    <textarea id="permanentAddress" rows="3" required></textarea>
+                </div>
+
+                <div class="row">
+                    <div class="form-group">
+                        <label for="cellPhone">Cell Phone</label>
+                        <input type="tel" id="cellPhone" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" required>
+                    </div>
+                </div>
+
+                <div class="footer-box">
+                    PLEASE READ THE MEMBERSHIP AGREEMENT AND SIGN ACCORDINGLY BELOW
+                </div>
+
+                <div class="declaration">
+                    <p>To: Southeast Bank PLC.</p>
+                    <p>I hereby apply for the Southeast Bank Prepaid Card as specified above. I hereby solemnly declare and affirm as follows:</p>
+                    <p>I have read and understood the terms and conditions of the Southeast Bank Prepaid Card Terms & Conditions printed on the reverse side of the application form.</p>
+                </div>
+
+                <div class="signature-container">
+                    <div class="signature-title">Signature</div>
+                    <div class="signature-box">
+                        Please sign manually with pen on the printed document
+                    </div>
+                </div>
+
+                <div class="form-group" style="text-align: center;">
+                    <button type="submit" class="btn-primary">Submit & Send via WhatsApp</button>
+                </div>
+            </form>
+
+            <div class="link-box" id="linkBox">
+                <p><b>Your PDF has been uploaded!</b></p>
+                <a href="#" id="pdfLink" target="_blank">PDF Link</a>
+                <button class="share-btn whatsapp" id="whatsapp-share">
+                    <i class="fab fa-whatsapp"></i> Send to WhatsApp
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Processing Animation Overlay -->
+    <div class="processing-overlay" id="processing-overlay">
+        <div class="processing-container">
+            <div class="processing-title">Processing Your Application</div>
+            <div class="processing-text">Please wait while we generate your PDF and upload it to Google Drive. This may take a few moments.</div>
+            
+            <div class="processing-steps">
+                <div class="processing-step" id="step1">
+                    <i class="fas fa-check-circle step-icon step-completed" id="step1-icon"></i>
+                    <span class="step-text step-completed" id="step1-text">Form validation</span>
+                </div>
+                <div class="processing-step" id="step2">
+                    <i class="fas fa-sync-alt step-icon step-active" id="step2-icon"></i>
+                    <span class="step-text step-active" id="step2-text">Generating PDF</span>
+                </div>
+                <div class="processing-step" id="step3">
+                    <i class="fas fa-circle step-icon step-pending" id="step3-icon"></i>
+                    <span class="step-text step-pending" id="step3-text">Uploading to Google Drive</span>
+                </div>
+                <div class="processing-step" id="step4">
+                    <i class="fas fa-circle step-icon step-pending" id="step4-icon"></i>
+                    <span class="step-text step-pending" id="step4-text">Preparing WhatsApp message</span>
+                </div>
+            </div>
+            
+            <div class="processing-spinner">
+                <div class="spinner"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
