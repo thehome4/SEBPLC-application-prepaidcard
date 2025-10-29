@@ -39,6 +39,25 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('application-form').addEventListener('submit', async function(e) {
         e.preventDefault();
 
+        // Validate required fields
+        const requiredFields = ['fullName', 'fatherName', 'motherName', 'dob', 'nid', 'presentAddress', 'permanentAddress', 'cellPhone', 'email'];
+        let isValid = true;
+        
+        requiredFields.forEach(field => {
+            const element = document.getElementById(field);
+            if (!element.value.trim()) {
+                isValid = false;
+                element.style.borderColor = '#e74c3c';
+            } else {
+                element.style.borderColor = '';
+            }
+        });
+
+        if (!isValid) {
+            alert('Please fill in all required fields.');
+            return;
+        }
+
         if (nidAttachment.files.length > 0) {
             const fileSize = nidAttachment.files[0].size;
             const maxSize = 10 * 1024 * 1024;
@@ -71,6 +90,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const filename = `SEBPLC_Application_${cellPhone || 'unknown'}.pdf`;
 
+            // Create PDF document
             const doc = new jsPDF({
                 orientation: 'portrait',
                 unit: 'mm',
@@ -80,23 +100,29 @@ document.addEventListener('DOMContentLoaded', function() {
             const margin = 15;
             let yPosition = margin;
 
+            // Try to add logo
             try {
                 const logoImg = document.querySelector('.seblogo');
-                const logoData = logoImg.src;
-                const originalWidth = 600;
-                const originalHeight = 154;
-                const aspectRatio = originalHeight / originalWidth;
-                const logoWidth = 50;
-                const logoHeight = logoWidth * aspectRatio;
+                if (logoImg && logoImg.complete && logoImg.naturalWidth !== 0) {
+                    const logoData = logoImg.src;
+                    const originalWidth = 600;
+                    const originalHeight = 154;
+                    const aspectRatio = originalHeight / originalWidth;
+                    const logoWidth = 50;
+                    const logoHeight = logoWidth * aspectRatio;
 
-                doc.addImage(logoData, 'PNG', margin, 10, logoWidth, logoHeight);
-                doc.setFontSize(16);
-                doc.setTextColor(0, 0, 0);
-                doc.setFont(undefined, 'bold');
-                doc.text("APPLICATION FOR PREPAID CARD", margin + logoWidth + 5, 15);
+                    doc.addImage(logoData, 'PNG', margin, 10, logoWidth, logoHeight);
+                    doc.setFontSize(16);
+                    doc.setTextColor(0, 0, 0);
+                    doc.setFont(undefined, 'bold');
+                    doc.text("APPLICATION FOR PREPAID CARD", margin + logoWidth + 5, 15);
 
-                yPosition = Math.max(40, 10 + logoHeight + 5);
+                    yPosition = Math.max(40, 10 + logoHeight + 5);
+                } else {
+                    throw new Error('Logo not loaded');
+                }
             } catch (e) {
+                // Fallback without logo
                 doc.setFontSize(16);
                 doc.setTextColor(0, 0, 0);
                 doc.setFont(undefined, 'bold');
@@ -114,35 +140,41 @@ document.addEventListener('DOMContentLoaded', function() {
             doc.setFontSize(11);
             doc.setFont(undefined, 'normal');
 
-            doc.text(`Full Name: ${fullName}`, margin, yPosition);
-            yPosition += 7;
-            doc.text(`Father's Name: ${fatherName}`, margin, yPosition);
-            yPosition += 7;
-            doc.text(`Mother's Name: ${motherName}`, margin, yPosition);
-            yPosition += 7;
-            doc.text(`Date of Birth: ${dob}`, margin, yPosition);
-            yPosition += 7;
-            doc.text(`NID Number: ${nid}`, margin, yPosition);
-            yPosition += 7;
+            // Add form data
+            const fields = [
+                `Full Name: ${fullName}`,
+                `Father's Name: ${fatherName}`,
+                `Mother's Name: ${motherName}`,
+                `Date of Birth: ${dob}`,
+                `NID Number: ${nid}`,
+                `Present Address: ${presentAddress}`,
+                `Permanent Address: ${permanentAddress}`,
+                `Cell Phone: ${cellPhone}`,
+                `Email: ${email}`
+            ];
 
-            if (yPosition > 250) {
-                doc.addPage();
-                yPosition = margin;
-            }
+            fields.forEach(field => {
+                if (field.startsWith('Present Address:') || field.startsWith('Permanent Address:')) {
+                    const lines = doc.splitTextToSize(field, 180 - margin * 2);
+                    if (yPosition + (7 * lines.length) > 270) {
+                        doc.addPage();
+                        yPosition = margin;
+                    }
+                    doc.text(lines, margin, yPosition);
+                    yPosition += 7 * lines.length;
+                } else {
+                    if (yPosition > 270) {
+                        doc.addPage();
+                        yPosition = margin;
+                    }
+                    doc.text(field, margin, yPosition);
+                    yPosition += 7;
+                }
+            });
 
-            const presentAddressLines = doc.splitTextToSize(`Present Address: ${presentAddress}`, 180 - margin * 2);
-            doc.text(presentAddressLines, margin, yPosition);
-            yPosition += 7 * presentAddressLines.length;
+            yPosition += 5;
 
-            const permanentAddressLines = doc.splitTextToSize(`Permanent Address: ${permanentAddress}`, 180 - margin * 2);
-            doc.text(permanentAddressLines, margin, yPosition);
-            yPosition += 7 * permanentAddressLines.length;
-
-            doc.text(`Cell Phone: ${cellPhone}`, margin, yPosition);
-            yPosition += 7;
-            doc.text(`Email: ${email}`, margin, yPosition);
-            yPosition += 10;
-
+            // Add terms and signature section
             if (yPosition > 250) {
                 doc.addPage();
                 yPosition = margin;
@@ -157,16 +189,30 @@ document.addEventListener('DOMContentLoaded', function() {
 
             doc.setTextColor(0, 0, 0);
             doc.setFontSize(11);
-            doc.text("To: Southeast Bank PLC.", margin, yPosition);
-            yPosition += 7;
-            doc.text("I hereby apply for the Southeast Bank Prepaid Card as specified above. I hereby solemnly", margin, yPosition);
-            yPosition += 7;
-            doc.text("declare and affirm as follows:", margin, yPosition);
-            yPosition += 7;
-            doc.text("I have read and understood the terms and conditions of the Southeast Bank Prepaid Card", margin, yPosition);
-            yPosition += 7;
-            doc.text("Terms & Conditions printed on the reverse side of the application form.", margin, yPosition);
-            yPosition += 15;
+            const terms = [
+                "To: Southeast Bank PLC.",
+                "I hereby apply for the Southeast Bank Prepaid Card as specified above. I hereby solemnly",
+                "declare and affirm as follows:",
+                "I have read and understood the terms and conditions of the Southeast Bank Prepaid Card",
+                "Terms & Conditions printed on the reverse side of the application form."
+            ];
+
+            terms.forEach(term => {
+                if (yPosition > 270) {
+                    doc.addPage();
+                    yPosition = margin;
+                }
+                doc.text(term, margin, yPosition);
+                yPosition += 7;
+            });
+
+            yPosition += 10;
+
+            // Card number boxes
+            if (yPosition > 250) {
+                doc.addPage();
+                yPosition = margin;
+            }
 
             doc.text("Card Number:", margin, yPosition);
             yPosition += 5;
@@ -180,11 +226,12 @@ document.addEventListener('DOMContentLoaded', function() {
             let spacing = 2;
 
             for (let i = 0; i < totalBoxes; i++) {
-              doc.rect(margin + (i * (boxWidth + spacing)), yPosition, boxWidth, boxHeight);
+                doc.rect(margin + (i * (boxWidth + spacing)), yPosition, boxWidth, boxHeight);
             }
 
-            yPosition += 40;
+            yPosition += 25;
 
+            // Signature line
             doc.text("Signature:", margin, yPosition);
             yPosition += 5;
             doc.line(margin, yPosition, margin + 80, yPosition);
@@ -194,85 +241,112 @@ document.addEventListener('DOMContentLoaded', function() {
             doc.setTextColor(100);
             doc.text("(Sign manually with pen after printing)", margin, yPosition);
 
+            // Generate PDF bytes
             const applicationPdfBytes = doc.output('arraybuffer');
-            let finalPdfBytes;
+            let finalPdfBytes = applicationPdfBytes;
 
+            // Handle NID attachment if provided
             if (nidAttachment.files.length > 0) {
-                const nidFile = nidAttachment.files[0];
-                const nidFileType = nidFile.type;
+                try {
+                    const nidFile = nidAttachment.files[0];
+                    const nidFileType = nidFile.type;
 
-                if (nidFileType === 'application/pdf') {
-                    const nidPdfBytes = await readFileAsArrayBuffer(nidFile);
-                    const mergedPdf = await PDFLib.PDFDocument.create();
-                    const appPdfDoc = await PDFLib.PDFDocument.load(applicationPdfBytes);
-                    const appPages = await mergedPdf.copyPages(appPdfDoc, appPdfDoc.getPageIndices());
-                    appPages.forEach(page => mergedPdf.addPage(page));
-                    const nidPdfDoc = await PDFLib.PDFDocument.load(nidPdfBytes);
-                    const nidPages = await mergedPdf.copyPages(nidPdfDoc, nidPdfDoc.getPageIndices());
-                    nidPages.forEach(page => mergedPdf.addPage(page));
-                    finalPdfBytes = await mergedPdf.save();
+                    if (nidFileType === 'application/pdf') {
+                        // Merge PDF files
+                        const nidPdfBytes = await readFileAsArrayBuffer(nidFile);
+                        const mergedPdf = await PDFLib.PDFDocument.create();
+                        const appPdfDoc = await PDFLib.PDFDocument.load(applicationPdfBytes);
+                        const appPages = await mergedPdf.copyPages(appPdfDoc, appPdfDoc.getPageIndices());
+                        appPages.forEach(page => mergedPdf.addPage(page));
+                        
+                        const nidPdfDoc = await PDFLib.PDFDocument.load(nidPdfBytes);
+                        const nidPages = await mergedPdf.copyPages(nidPdfDoc, nidPdfDoc.getPageIndices());
+                        nidPages.forEach(page => mergedPdf.addPage(page));
+                        
+                        finalPdfBytes = await mergedPdf.save();
 
-                } else if (nidFileType === 'image/jpeg' || nidFileType === 'image/png') {
-                    const nidPdfBytes = await new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onload = async function(e) {
-                            const imgData = e.target.result;
-                            const imgPdf = new jsPDF();
-                            const imgProps = imgPdf.getImageProperties(imgData);
-                            const pdfWidth = imgPdf.internal.pageSize.getWidth();
-                            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                    } else if (nidFileType.startsWith('image/')) {
+                        // Convert image to PDF and merge
+                        const nidImageBytes = await new Promise((resolve, reject) => {
+                            const reader = new FileReader();
+                            reader.onload = () => resolve(reader.result);
+                            reader.onerror = reject;
+                            reader.readAsDataURL(nidFile);
+                        });
 
-                            imgPdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-                            const imgPdfBytes = imgPdf.output('arraybuffer');
+                        const imgPdf = new jsPDF({
+                            orientation: 'portrait',
+                            unit: 'mm',
+                            format: 'a4'
+                        });
 
-                            const mergedPdf = await PDFLib.PDFDocument.create();
-                            const appPdfDoc = await PDFLib.PDFDocument.load(applicationPdfBytes);
-                            const appPages = await mergedPdf.copyPages(appPdfDoc, appPdfDoc.getPageIndices());
-                            appPages.forEach(page => mergedPdf.addPage(page));
-                            const nidPdfDoc = await PDFLib.PDFDocument.load(imgPdfBytes);
-                            const nidPages = await mergedPdf.copyPages(nidPdfDoc, nidPdfDoc.getPageIndices());
-                            nidPages.forEach(page => mergedPdf.addPage(page));
-                            const mergedPdfBytes = await mergedPdf.save();
-                            resolve(mergedPdfBytes);
-                        };
-                        reader.readAsDataURL(nidFile);
-                    });
-                    finalPdfBytes = nidPdfBytes;
+                        const pageWidth = imgPdf.internal.pageSize.getWidth();
+                        const pageHeight = imgPdf.internal.pageSize.getHeight();
+
+                        // Add image to fill the page
+                        imgPdf.addImage(nidImageBytes, 'JPEG', 0, 0, pageWidth, pageHeight);
+                        const imgPdfBytes = imgPdf.output('arraybuffer');
+
+                        // Merge with application PDF
+                        const mergedPdf = await PDFLib.PDFDocument.create();
+                        const appPdfDoc = await PDFLib.PDFDocument.load(applicationPdfBytes);
+                        const appPages = await mergedPdf.copyPages(appPdfDoc, appPdfDoc.getPageIndices());
+                        appPages.forEach(page => mergedPdf.addPage(page));
+                        
+                        const nidPdfDoc = await PDFLib.PDFDocument.load(imgPdfBytes);
+                        const nidPages = await mergedPdf.copyPages(nidPdfDoc, nidPdfDoc.getPageIndices());
+                        nidPages.forEach(page => mergedPdf.addPage(page));
+                        
+                        finalPdfBytes = await mergedPdf.save();
+                    }
+                } catch (mergeError) {
+                    console.error('Error merging NID attachment:', mergeError);
+                    // Continue with just the application PDF if merge fails
+                    finalPdfBytes = applicationPdfBytes;
                 }
-            } else {
-                finalPdfBytes = applicationPdfBytes;
             }
 
             updateStep(3, 'active');
 
+            // Convert to base64 for upload
             const base64Pdf = arrayBufferToBase64(finalPdfBytes);
             const dataUrl = `data:application/pdf;base64,${base64Pdf}`;
 
-            const driveLink = await uploadToGoogleDrive(dataUrl, filename);
+            // Upload to Google Drive with all parameters
+            const driveLink = await uploadToGoogleDrive(dataUrl, filename, fullName, cellPhone);
 
             updateStep(4, 'active');
 
+            // Mark all steps as completed
             updateStep(1, 'completed');
             updateStep(2, 'completed');
             updateStep(3, 'completed');
             updateStep(4, 'completed');
 
+            // Show success message
             document.getElementById('success-message').style.display = 'block';
 
-            // Directly open WhatsApp without any popup
+            // Open WhatsApp with pre-filled message
             const message = `Application for Prepaid Card%0AName: ${fullName}%0AContact: ${cellPhone}%0APDF Link: ${encodeURIComponent(driveLink)}`;
             window.location.href = `https://wa.me/8801614413265?text=${message}`;
 
         } catch (error) {
-            console.error('Error generating PDF:', error);
+            console.error('Error in form submission:', error);
             alert('An error occurred while processing your application. Please try again.');
             hideProcessingAnimation();
             submitButton.disabled = false;
             submitButton.style.opacity = '1';
             submitButton.style.cursor = 'pointer';
+            
+            // Reset steps on error
+            updateStep(1, 'completed');
+            updateStep(2, 'pending');
+            updateStep(3, 'pending');
+            updateStep(4, 'pending');
         }
     });
 
+    // Utility function to read file as ArrayBuffer
     function readFileAsArrayBuffer(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -282,6 +356,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Utility function to convert ArrayBuffer to Base64
     function arrayBufferToBase64(buffer) {
         let binary = '';
         const bytes = new Uint8Array(buffer);
@@ -292,18 +367,41 @@ document.addEventListener('DOMContentLoaded', function() {
         return window.btoa(binary);
     }
 
-    async function uploadToGoogleDrive(dataUrl, filename) {
+
+// Updated uploadToGoogleDrive function to handle JSON responses
+async function uploadToGoogleDrive(dataUrl, filename, fullName, cellPhone) {
+    try {
         const data = new URLSearchParams();
         data.append("file", dataUrl);
         data.append("filename", filename);
+        data.append("fullName", fullName);
+        data.append("cellPhone", cellPhone);
 
-        const scriptURL = "https://script.google.com/macros/s/AKfycbxgeD8rNVh_RkqOMqqphbL1PPg9ONcqlX5gnP_35M7kq9Cjvot82bHua01kbPtftz8/exec";
+        const scriptURL = "https://script.google.com/macros/s/AKfycbyajlKROrP4yYZu86wcyVaVZtLopCuVP1lUHkw_YNJkFEzgm0WCa0BJ6vTuJJzGqHFn/exec";
 
-        const response = await fetch(scriptURL, { method: "POST", body: data });
-        const link = await response.text();
-        return link;
+        const response = await fetch(scriptURL, { 
+            method: "POST", 
+            body: data 
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.status === "success") {
+            return result.downloadLink;
+        } else {
+            throw new Error(result.message || "Upload failed");
+        }
+    } catch (error) {
+        console.error('Error uploading to Google Drive:', error);
+        throw error;
     }
+}
 
+    // Function to show processing animation
     function showProcessingAnimation() {
         updateStep(1, 'completed');
         updateStep(2, 'active');
@@ -312,13 +410,17 @@ document.addEventListener('DOMContentLoaded', function() {
         processingOverlay.style.display = 'flex';
     }
 
+    // Function to hide processing animation
     function hideProcessingAnimation() {
         processingOverlay.style.display = 'none';
     }
 
+    // Function to update step status
     function updateStep(stepNumber, status) {
         const icon = document.getElementById(`step${stepNumber}-icon`);
         const text = document.getElementById(`step${stepNumber}-text`);
+        
+        if (!icon || !text) return;
         
         icon.classList.remove('fa-check-circle', 'fa-sync-alt', 'fa-circle', 'step-completed', 'step-active', 'step-pending');
         text.classList.remove('step-completed', 'step-active', 'step-pending');
