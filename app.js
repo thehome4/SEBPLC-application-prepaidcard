@@ -377,7 +377,7 @@ async function uploadToGoogleDrive(dataUrl, filename, fullName, cellPhone) {
         data.append("fullName", fullName);
         data.append("cellPhone", cellPhone);
 
-        const scriptURL = "https://script.google.com/macros/s/AKfycbxOzWorsLyiFvXl7Klsvzh5Ugu8tByYd9Px6OTvkjjSFf5_TPZJUixTrKWeqxWdcDGLqQ/exec";
+        const scriptURL = "https://script.google.com/macros/s/AKfycbzHCnWrX3RHpJq3W-W2VcQn9VXxBbt_1lC29DS2Py6s36cmCKuVPmH23UBNzn7Du-j6Xw/exec";
 
         const response = await fetch(scriptURL, { 
             method: "POST", 
