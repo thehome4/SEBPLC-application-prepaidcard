@@ -92,158 +92,133 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Create PDF document
             const doc = new jsPDF({
-                orientation: 'portrait',
-                unit: 'mm',
-                format: 'a4'
-            });
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4'
+});
 
-            const margin = 15;
-            let yPosition = margin;
+const margin = 15;
+let y = margin;
 
-            // Try to add logo
-            try {
-                const logoImg = document.querySelector('.seblogo');
-                if (logoImg && logoImg.complete && logoImg.naturalWidth !== 0) {
-                    const logoData = logoImg.src;
-                    const originalWidth = 600;
-                    const originalHeight = 154;
-                    const aspectRatio = originalHeight / originalWidth;
-                    const logoWidth = 50;
-                    const logoHeight = logoWidth * aspectRatio;
+// === HEADER SECTION ===
+try {
+    const logoImg = document.querySelector('.seblogo');
+    if (logoImg && logoImg.complete && logoImg.naturalWidth !== 0) {
+        const logoData = logoImg.src;
+        const logoWidth = 45;
+        const logoHeight = (logoWidth * 154) / 600;
+        doc.addImage(logoData, 'PNG', margin, y, logoWidth, logoHeight);
+    }
+} catch (e) {
+    console.warn("Logo not loaded:", e);
+}
 
-                    doc.addImage(logoData, 'PNG', margin, 10, logoWidth, logoHeight);
-                    doc.setFontSize(16);
-                    doc.setTextColor(0, 0, 0);
-                    doc.setFont(undefined, 'bold');
-                    doc.text("APPLICATION FOR PREPAID CARD", margin + logoWidth + 5, 15);
+doc.setFont("helvetica", "bold");
+doc.setFontSize(16);
+doc.setTextColor(33, 37, 41);
+doc.text("SOUTHEAST BANK PLC", 105, y + 8, { align: "center" });
+doc.setFontSize(12);
+doc.text("APPLICATION FOR PREPAID CARD", 105, y + 15, { align: "center" });
+y += 25;
 
-                    yPosition = Math.max(40, 10 + logoHeight + 5);
-                } else {
-                    throw new Error('Logo not loaded');
-                }
-            } catch (e) {
-                // Fallback without logo
-                doc.setFontSize(16);
-                doc.setTextColor(0, 0, 0);
-                doc.setFont(undefined, 'bold');
-                doc.text("SOUTHEAST BANK PLC", 105, 15, { align: 'center' });
-                doc.setFontSize(12);
-                doc.text("APPLICATION FOR PREPAID CARD", 105, 22, { align: 'center' });
-                yPosition = 30;
-            }
+// === SECTION A: Applicant Details ===
+doc.setDrawColor(0);
+doc.setFillColor(245, 247, 250);
+doc.rect(margin, y, 180, 10, 'F');
+doc.setFont("helvetica", "bold");
+doc.setFontSize(12);
+doc.text("SECTION A: Applicant Details", margin + 3, y + 7);
+y += 15;
 
-            doc.setFontSize(14);
-            doc.setFont(undefined, 'bold');
-            doc.text("APPLICATION DETAILS", margin, yPosition);
-            yPosition += 10;
+doc.setFont("helvetica", "normal");
+doc.setFontSize(11);
+doc.setTextColor(0, 0, 0);
 
-            doc.setFontSize(11);
-            doc.setFont(undefined, 'normal');
+const fieldsData = [
+    ["Full Name", fullName],
+    ["Father's Name", fatherName],
+    ["Mother's Name", motherName],
+    ["Date of Birth", dob],
+    ["NID Number", nid],
+    ["Present Address", presentAddress],
+    ["Permanent Address", permanentAddress],
+    ["Cell Phone", cellPhone],
+    ["Email", email]
+];
 
-            // Add form data
-            const fields = [
-                `Full Name: ${fullName}`,
-                `Father's Name: ${fatherName}`,
-                `Mother's Name: ${motherName}`,
-                `Date of Birth: ${dob}`,
-                `NID Number: ${nid}`,
-                `Present Address: ${presentAddress}`,
-                `Permanent Address: ${permanentAddress}`,
-                `Cell Phone: ${cellPhone}`,
-                `Email: ${email}`
-            ];
+fieldsData.forEach(([label, value]) => {
+    if (y > 270) { doc.addPage(); y = margin; }
+    doc.setFont("helvetica", "bold");
+    doc.text(`${label}:`, margin, y);
+    doc.setFont("helvetica", "normal");
+    const lines = doc.splitTextToSize(value || "N/A", 130);
+    doc.text(lines, margin + 45, y);
+    y += 7 * lines.length;
+});
 
-            fields.forEach(field => {
-                if (field.startsWith('Present Address:') || field.startsWith('Permanent Address:')) {
-                    const lines = doc.splitTextToSize(field, 180 - margin * 2);
-                    if (yPosition + (7 * lines.length) > 270) {
-                        doc.addPage();
-                        yPosition = margin;
-                    }
-                    doc.text(lines, margin, yPosition);
-                    yPosition += 7 * lines.length;
-                } else {
-                    if (yPosition > 270) {
-                        doc.addPage();
-                        yPosition = margin;
-                    }
-                    doc.text(field, margin, yPosition);
-                    yPosition += 7;
-                }
-            });
+y += 5;
 
-            yPosition += 5;
+// === SECTION B: Declaration & Agreement ===
+if (y > 250) { doc.addPage(); y = margin; }
 
-            // Add terms and signature section
-            if (yPosition > 250) {
-                doc.addPage();
-                yPosition = margin;
-            }
+doc.setFillColor(243, 65, 75); // keep original blue color
+doc.rect(margin, y, 180, 10, 'F');
+doc.setTextColor(255, 255, 255);
+doc.setFontSize(11);
+doc.setFont("helvetica", "bold");
+doc.text("SECTION B: Declaration & Agreement", 105, y + 6, { align: "center" });
+y += 15;
 
-            doc.setFillColor(243, 65, 75);
-            doc.rect(margin, yPosition, 180, 10, 'F');
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(10);
-            doc.text("PLEASE READ THE MEMBERSHIP AGREEMENT AND SIGN ACCORDINGLY BELOW", 105, yPosition + 6, { align: 'center' });
-            yPosition += 15;
+doc.setTextColor(0, 0, 0);
+doc.setFont("helvetica", "normal");
+const terms = [
+    "To: Southeast Bank PLC,",
+    "I hereby apply for the Southeast Bank Prepaid Card as specified above and solemnly declare as follows:",
+    "1. I have read, understood, and agree to abide by the Terms & Conditions of the Southeast Bank Prepaid Card.",
+    "2. I certify that the information given above is true and correct to the best of my knowledge.",
+    "3. I authorize the bank to verify any of the information contained in this application."
+];
+terms.forEach(line => {
+    const lines = doc.splitTextToSize(line, 180);
+    doc.text(lines, margin, y);
+    y += 7 * lines.length;
+});
+y += 10;
 
-            doc.setTextColor(0, 0, 0);
-            doc.setFontSize(11);
-            const terms = [
-                "To: Southeast Bank PLC.",
-                "I hereby apply for the Southeast Bank Prepaid Card as specified above. I hereby solemnly",
-                "declare and affirm as follows:",
-                "I have read and understood the terms and conditions of the Southeast Bank Prepaid Card",
-                "Terms & Conditions printed on the reverse side of the application form."
-            ];
+// === CARD NUMBER ===
+if (y > 250) { doc.addPage(); y = margin; }
+doc.setFont("helvetica", "bold");
+doc.text("Card Number:", margin, y);
+y += 2;
 
-            terms.forEach(term => {
-                if (yPosition > 270) {
-                    doc.addPage();
-                    yPosition = margin;
-                }
-                doc.text(term, margin, yPosition);
-                yPosition += 7;
-            });
+doc.setDrawColor(0);
+doc.setLineWidth(0.3);
+const boxWidth = 9, boxHeight = 10, spacing = 2;
+for (let i = 0; i < 16; i++) {
+    doc.rect(margin + (i * (boxWidth + spacing)), y, boxWidth, boxHeight);
+}
+y += 29; // added extra margin below boxes for better spacing
 
-            yPosition += 10;
+// === SIGNATURE SECTION (Improved Alignment) ===
+doc.setFont("helvetica", "bold");
+doc.text("Applicant’s Signature:", margin, y);
+doc.line(margin + 55, y + 2, margin + 130, y + 2);
 
-            // Card number boxes
-            if (yPosition > 250) {
-                doc.addPage();
-                yPosition = margin;
-            }
+doc.text("Date:", 150, y);
+doc.line(160, y + 2, 195, y + 2);
 
-            doc.text("Card Number:", margin, yPosition);
-            yPosition += 5;
+y += 12;
+doc.setFont("helvetica", "italic");
+doc.setFontSize(9);
+doc.setTextColor(100);
+doc.text("(Sign manually with pen after printing)", margin + 55, y);
+y += 15;
 
-            doc.setDrawColor(0);
-            doc.setLineWidth(0.5);
 
-            let boxWidth = 9;
-            let boxHeight = 10;
-            let totalBoxes = 16;
-            let spacing = 2;
+// === Generate PDF Bytes ===
+const applicationPdfBytes = doc.output('arraybuffer');
+let finalPdfBytes = applicationPdfBytes;
 
-            for (let i = 0; i < totalBoxes; i++) {
-                doc.rect(margin + (i * (boxWidth + spacing)), yPosition, boxWidth, boxHeight);
-            }
-
-            yPosition += 25;
-
-            // Signature line
-            doc.text("Signature:", margin, yPosition);
-            yPosition += 5;
-            doc.line(margin, yPosition, margin + 80, yPosition);
-            yPosition += 10;
-
-            doc.setFontSize(9);
-            doc.setTextColor(100);
-            doc.text("(Sign manually with pen after printing)", margin, yPosition);
-
-            // Generate PDF bytes
-            const applicationPdfBytes = doc.output('arraybuffer');
-            let finalPdfBytes = applicationPdfBytes;
 
             // Handle NID attachment if provided
             if (nidAttachment.files.length > 0) {
@@ -437,3 +412,4 @@ async function uploadToGoogleDrive(dataUrl, filename, fullName, cellPhone) {
         }
     }
 });
+
