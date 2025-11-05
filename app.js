@@ -189,7 +189,7 @@ y += 10;
 if (y > 250) { doc.addPage(); y = margin; }
 doc.setFont("helvetica", "bold");
 doc.text("Card Number:", margin, y);
-y += 2;
+y += 7;
 
 doc.setDrawColor(0);
 doc.setLineWidth(0.3);
@@ -412,4 +412,5 @@ async function uploadToGoogleDrive(dataUrl, filename, fullName, cellPhone) {
         }
     }
 });
+
 
